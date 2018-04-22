@@ -1,0 +1,7 @@
+/.idea
+/*/.vagrant
+/ansible/*.retry
+/ansible/group_vars/all
+/ansible/tmp/*
+!/ansible/tmp/.gitkeep
+/vagrant/*.log

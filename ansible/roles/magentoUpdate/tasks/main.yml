@@ -1,0 +1,87 @@
+- name: Update project dependencies by composer
+  composer:
+    command: update
+    no_dev: no
+    working_dir: "{{ app_base_path }}"
+  become: yes
+  become_user: "{{ www_user }}"
+- name: Change files permissions
+  command: "find var vendor pub/static pub/media app/etc -type f -exec chmod g+w {} \\;"
+  args:
+    chdir: "{{ app_base_path }}"
+- name: Change directories permissions
+  command: "find var vendor pub/static pub/media app/etc -type d -exec chmod g+ws {} \\;"
+  args:
+    chdir: "{{ app_base_path }}"
+- name: Change bin magento file permission
+  file:
+    dest: "{{ app_base_path }}/bin/magento"
+    state: file
+    mode: 0764
+    owner: "{{ www_user }}"
+    group: "{{ www_group }}"
+- name: Enable all modules
+  shell: "bin/magento module:enable --all"
+  become: yes
+  become_user: "{{ www_user }}"
+  args:
+    chdir: "{{ app_base_path }}"
+- name: Upgrade db
+  shell: "bin/magento setup:upgrade"
+  become: yes
+  become_user: "{{ www_user }}"
+  args:
+    chdir: "{{ app_base_path }}"
+- name: Clean temporary directories manually
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ app_base_path }}/var/di/"
+    - "{{ app_base_path }}/var/generation/"
+    - "{{ app_base_path }}/var/cache/"
+    - "{{ app_base_path }}/var/page_cache/"
+- name: Clean cache by magento command
+  shell: "bin/magento cache:clean"
+  become: yes
+  become_user: "{{ www_user }}"
+  args:
+    chdir: "{{ app_base_path }}"
+- name: Compile di
+  shell: "bin/magento setup:di:compile"
+  become: yes
+  become_user: "{{ www_user }}"
+  args:
+    chdir: "{{ app_base_path }}"
+- name: Enable appropriate deploy mode
+  shell: "bin/magento deploy:mode:set -s {{ magento_deploy_mode }}"
+  become: yes
+  become_user: "{{ www_user }}"
+  args:
+    chdir: "{{ app_base_path }}"
+- name: Deploy static content
+  shell: "bin/magento setup:static-content:deploy"
+  become: yes
+  become_user: "{{ www_user }}"
+  args:
+    chdir: "{{ app_base_path }}"
+- name: Flush magento cache
+  shell: "bin/magento cache:flush"
+  become: yes
+  become_user: "{{ www_user }}"
+  args:
+    chdir: "{{ app_base_path }}"
+- name: Enable magento cache
+  shell: "bin/magento cache:enable"
+  become: yes
+  become_user: "{{ www_user }}"
+  args:
+    chdir: "{{ app_base_path }}"
+- name: restartNginx
+  service:
+    name: nginx
+    state: restarted
+- name: restartPhpFpm
+  service:
+    name: "php{{ php_version }}-fpm"
+    state: restarted

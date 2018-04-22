@@ -1,0 +1,71 @@
+- name: Install the Nginx web server
+  apt:
+    name: nginx
+    state: present
+- name: Ensure that Nginx is started and enabled on system boot
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+- name: Add apt repository for php
+  apt_repository:
+    repo: ppa:ondrej/php
+    state: present
+    update_cache: yes
+- name: Install php packages
+  apt:
+    name: '{{ item }}'
+    state: present
+  with_items:
+    - "php{{ php_version }}"
+    - "php{{ php_version }}-common"
+    - "php{{ php_version }}-fpm"
+    - "php{{ php_version }}-cli"
+    - "php{{ php_version }}-mysql"
+    - "php{{ php_version }}-curl"
+    - "php{{ php_version }}-intl"
+    - "php{{ php_version }}-mcrypt"
+    - "php{{ php_version }}-zip"
+    - "php{{ php_version }}-mbstring"
+    - "php{{ php_version }}-bcmath"
+    - "php{{ php_version }}-gd"
+    - "php{{ php_version }}-xsl"
+    - "php{{ php_version }}-iconv"
+    - "php{{ php_version }}-soap"
+  register: phpInstalled
+  notify: restartNginx
+- name: Change nginx user
+  lineinfile:
+    dest: /etc/nginx/nginx.conf
+    regexp: '^.*user.*$'
+    line: 'user {{ www_user }} {{ www_group }};'
+    state: present
+  notify: restartNginx
+- name: Change php-fpm user and listen user
+  lineinfile:
+    dest: "/etc/php/{{ php_version }}/fpm/pool.d/www.conf"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  with_items:
+    - { regexp: '^[^_\.]*user[^s]*=.*$', line: 'user = {{ www_user }}' }
+    - { regexp: '^[^_\.]*group[^s]*=.*$', line: 'group = {{ www_group }}' }
+    - { regexp: '^.*listen.owner.*=.*$', line: 'listen.owner = {{ www_user }}' }
+    - { regexp: '^.*listen.group.*=.*$', line: 'listen.group = {{ www_group }}' }
+  notify: restartPhpFpm
+- name: Change php settings to those recommended for magento2
+  lineinfile:
+    dest: "/etc/php/{{ php_version }}/fpm/php.ini"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  with_items:
+    - { regexp: '^.*memory_limit.*$', line: 'memory_limit = {{ php_fpm_memory_limit }}' }
+  notify: restartPhpFpm
+- name: Ensure there is var/www/ directory
+  file:
+    path: /var/www
+    state: directory
+    owner: "{{ www_user }}"
+    group: "{{ www_group }}"
+

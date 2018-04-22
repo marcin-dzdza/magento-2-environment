@@ -1,0 +1,23 @@
+- name: Install NFS Server
+  apt:
+    name: "{{item}}"
+    state: present
+  with_items:
+   - nfs-common
+   - nfs-kernel-server
+- name: "Get ID of group {{ www_group }}"
+  group:
+    name: "{{ www_group }}"
+    state: present
+  register: www_group_facts
+- name: "Get ID of user {{ www_user }}"
+  user:
+    name: "{{ www_user }}"
+    state: present
+  register: www_user_facts
+- name: Run export
+  shell: exportfs -a
+- name: Restart NFS
+  service:
+    name: nfs-kernel-server
+    state: restarted

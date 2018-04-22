@@ -1,0 +1,71 @@
+# system locale
+default_locale: "pl_PL.UTF-8"
+timezone: "Europe/Warsaw"
+
+# system users
+www_user: deployer
+www_group: www-data
+
+# php
+php_version: 7.0
+php_fpm_memory_limit: 1G
+
+# xdebug
+xdebug_port: 9000
+xdebug_idekey: phpstorm-xdebug
+
+# filesystem: general
+fpm_path: "/var/run/php/php{{ php_version }}-fpm.sock"
+
+# filesystem: app
+project_base_path: "/var/www/project"
+app_base_path: "{{ project_base_path }}/magento"
+app_webroot: "{{ app_base_path }}/pub"
+app_access_log: "{{ project_base_path }}/logs/nginx-access.log"
+app_error_log: "{{ project_base_path }}/logs/nginx-error.log"
+
+# filesystem: phpmyadmin
+myadmin_path: "/var/www/phpmyadmin"
+myadmin_access_log: "{{ myadmin_path }}/logs/nginx-access.log"
+myadmin_error_log: "{{ myadmin_path }}/logs/nginx-error.log"
+
+# hosts: app
+app_hostname: magento.local
+app_url: "http://{{ app_hostname }}"
+app_backend_frontname: "admin"
+
+# hosts: phpmyadmin
+myadmin_hostname: myadmin.magento.local
+
+# database: general
+db_root_password: root
+
+# database: app
+app_db_name: magento
+app_db_user: magento
+app_db_password: admin123
+
+# app: repository
+app_repo: "https://github.com/marcin-dzdza/magento-2-project"
+app_branch: master
+
+# app: environment differences
+app_env: dev # possible: dev, test, prod
+debug_mode: true # should be true for dev and test
+magento_deploy_mode: developer # possible values: developer, production
+
+# app: other
+app_language: en_US
+app_currency: USD
+app_timezone: "{{ timezone }}"
+
+# app: default admin
+app_admin_login: admin
+app_admin_email: mail@example.com
+app_admin_password: admin123
+app_admin_firstname: Janino
+app_admin_lastname: Kowalskie
+
+# repo.magento.com auth
+repo_magento_username: should_be_specified
+repo_magento_password: should_be_specified

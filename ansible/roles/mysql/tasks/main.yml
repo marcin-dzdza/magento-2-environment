@@ -1,0 +1,28 @@
+- name: Ensure that MySQL is installed
+  apt:
+    name: '{{ item }}'
+    state: present
+  with_items:
+    - mysql-server
+    - python3-mysqldb
+- name: Ensure that MySQL is started and enabled
+  service:
+    name: mysql
+    state: started
+    enabled: yes
+- name: Set the root password for MySQL
+  mysql_user:
+    name: root
+    password: '{{ db_root_password }}'
+    state: present
+- name: Upload the .my.cnf file to save the credentials
+  template:
+    src: my.cnf
+    dest: /root/.my.cnf
+    owner: root
+    mode: 0600
+- name: Remove anonymous accounts
+  mysql_user:
+    name: ''
+    host: localhost
+    state: absent

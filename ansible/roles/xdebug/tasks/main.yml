@@ -1,0 +1,25 @@
+- name: Install php xdebug extension
+  apt:
+    name: "php{{ php_version }}-xdebug"
+    state: present
+  register: xdebugInstalled
+  notify: restartNginx
+- name: Configure xdebug for CLI and FPM
+  lineinfile:
+    dest: "{{ item[0] }}"
+    regexp: "{{ item[1].regexp }}"
+    line: "{{ item[1].line }}"
+  with_nested:
+    - [ '/etc/php/{{ php_version }}/cli/php.ini', '/etc/php/{{ php_version }}/fpm/php.ini' ]
+    - [
+        { regexp: '^.*\[xdebug\].*$', line: '[xdebug]' },
+        { regexp: '^.*xdebug\.remote_enable.*$', line: 'xdebug.remote_enable=on' },
+        { regexp: '^.*xdebug\.remote_handler.*$', line: 'xdebug.remote_handler=dbgp' },
+        { regexp: '^.*xdebug\.remote_host.*$', line: 'xdebug.remote_host=10.0.2.2' },
+        { regexp: '^.*xdebug\.remote_port.*$', line: 'xdebug.remote_port={{ xdebug_port }}' },
+        { regexp: '^.*xdebug\.remote_autostart.*$', line: 'xdebug.remote_autostart=on' },
+        { regexp: '^.*xdebug\.remote_connect_back.*$', line: 'xdebug.remote_connect_back=on' },
+        { regexp: '^.*xdebug\.remote_mode.*$', line: 'xdebug.remote_mode=req' },
+        { regexp: '^.*xdebug\.idekey.*$', line: 'xdebug.idekey="{{ xdebug_idekey }}"' }
+      ]
+  notify: restartPhpFpm

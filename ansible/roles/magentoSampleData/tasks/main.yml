@@ -1,0 +1,13 @@
+- name: Copy auth json to magento dir to avoid asking for credentials
+  file:
+    src: "/home/{{ www_user }}/.composer/auth.json"
+    dest: "{{ app_base_path }}/auth.json"
+    owner: "{{ www_user }}"
+    group: "{{ www_group }}"
+    mode: 0775
+- name: Deploy sample data
+  shell: "bin/magento sampledata:deploy"
+  become: yes
+  become_user: "{{ www_user }}"
+  args:
+    chdir: "{{ app_base_path }}"

@@ -1,0 +1,127 @@
+- name: Create composer directory in home directory
+  file:
+    path: "/home/{{ www_user }}/.composer"
+    state: directory
+    owner: "{{ www_user }}"
+    group: "{{ www_group }}"
+    mode: 0755
+- name: Copy magento repo auth.json
+  template:
+    src: auth.json.j2
+    dest: "/home/{{ www_user }}/.composer/auth.json"
+    owner: "{{ www_user }}"
+    group: "{{ www_group }}"
+    mode: 0644
+  become: yes
+  become_user: "{{ www_user }}"
+- name: Create base project directory
+  file:
+    path: "{{ project_base_path }}"
+    state: directory
+    owner: "{{ www_user }}"
+    group: "{{ www_group }}"
+    mode: 0775
+- name: Clone project repository and checkout working branch
+  become: yes
+  become_user: "{{ www_user }}"
+  git:
+    repo: "{{ app_repo }}"
+    dest: "{{ project_base_path }}"
+    version: "{{ app_branch }}"
+    accept_hostkey: yes
+  register: repo_cloned
+- name: Install project dependencies by composer
+  composer:
+    command: install
+    no_dev: no
+    working_dir: "{{ app_base_path }}"
+  become: yes
+  become_user: "{{ www_user }}"
+- name: Chmod bin magento after composer install
+  file:
+    path: "{{ app_base_path }}/bin/magento"
+    mode: 0775
+    owner: "{{ www_user }}"
+    group: "{{ www_group }}"
+- name: Create application database
+  mysql_db:
+    name: '{{ app_db_name }}'
+    encoding: utf8
+    collation: utf8_polish_ci
+    state: present
+  register: db_created
+- name: Create an application user
+  mysql_user:
+    name: '{{ app_db_user }}'
+    password: '{{ app_db_password }}'
+    host: '%'
+    priv: '{{ app_db_name }}.*:ALL'
+    state: present
+- name: Create an application user
+  mysql_user:
+    name: '{{ app_db_user }}'
+    password: '{{ app_db_password }}'
+    host: 'localhost'
+    priv: '{{ app_db_name }}.*:ALL'
+    state: present
+- name: restart mysql to enforce config change
+  service:
+    name: mysql
+    state: restarted
+- name: Make sure there are directories with proper permissions
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+    owner: "{{ www_user }}"
+    group: "{{ www_group }}"
+    mode: 0775
+  with_items:
+    - "{{ app_base_path }}/var"
+    - "{{ app_base_path }}/vendor"
+    - "{{ app_base_path }}/pub/static"
+    - "{{ app_base_path }}/pub/media"
+    - "{{ app_base_path }}/app/etc"
+- name: Copy installation script
+  template:
+    src: installMagento.sh.j2
+    dest: "{{ app_base_path }}/installMagento.sh"
+    owner: "{{ www_user }}"
+    group: "{{ www_group }}"
+    mode: 0775
+- name: Install Magento 2
+  shell: sh installMagento.sh
+  args:
+    chdir: "{{ app_base_path }}"
+  become: yes
+  become_user: "{{ www_user }}"
+- name: Remove installation script
+  file:
+    path: "{{ app_base_path }}/installMagento.sh"
+    state: absent
+- name: Copy vhost configuration for application
+  template:
+    src: magento.local.conf.j2
+    dest: /etc/nginx/sites-available/magento.local.conf
+- name: Application conf to sites-enabled
+  file:
+    src: /etc/nginx/sites-available/magento.local.conf
+    dest: /etc/nginx/sites-enabled/magento.local.conf
+    state: link
+  notify: restartNginx
+- name: Make project root dir available through nfs
+  lineinfile:
+    dest: /etc/exports
+    regexp: "{{ project_base_path }}"
+    line: '"{{ project_base_path }}" *(rw,sync,all_squash,no_subtree_check,anonuid={{www_user_facts.uid}},anongid={{www_group_facts.gid}})'
+- name: Run export
+  shell: exportfs -a
+- name: Restart NFS
+  service:
+    name: nfs-kernel-server
+    state: restarted
+- name: Install magento cron
+  cron:
+    name: "[Magento] cron 1 min"
+    user: "{{ www_user }}"
+    job: '/usr/bin/php {{ app_base_path }}/bin/magento cron:run | grep -v "Ran jobs by schedule" >> {{ app_base_path }}/var/log/magento.cron.log'

@@ -1,0 +1,53 @@
+- name: Install phpmyadmin debconf 1
+  debconf:
+    name: phpmyadmin
+    question: 'phpmyadmin/dbconfig-install'
+    value: 'true'
+    vtype: 'boolean'
+- name: Install phpmyadmin debconf 2
+  debconf:
+    name: phpmyadmin
+    question: 'phpmyadmin/app-password-confirm'
+    value: '{{ db_root_password }}'
+    vtype: 'password'
+- name: Install phpmyadmin debconf 3
+  debconf:
+    name: phpmyadmin
+    question: 'phpmyadmin/mysql/admin-pass'
+    value: '{{ db_root_password }}'
+    vtype: 'password'
+- name: Install phpmyadmin debconf 4
+  debconf:
+    name: phpmyadmin
+    question: 'phpmyadmin/mysql/app-pass'
+    value: '{{ db_root_password}}'
+    vtype: 'password'
+- name: Install phpmyadmin debconf 5
+  debconf:
+    name: phpmyadmin
+    question: 'phpmyadmin/reconfigure-webserver'
+    value: ''
+    vtype: 'multiselect'
+- name: Install phpmyadmin
+  apt:
+    name: phpmyadmin
+    state: present
+- name: Link phpmyadmin webroot to var/www
+  file:
+    path: "{{ myadmin_path }}"
+    src: /usr/share/phpmyadmin
+    state: link
+- name: Ensure there is logs directory for myadmin host
+  file:
+    path: "{{ myadmin_path }}/logs"
+    state: directory
+- name: Copy vhost configuration for myadmin
+  template:
+    src: myadmin.magento.local.conf
+    dest: /etc/nginx/sites-available/myadmin.magento.local.conf
+- name: Link myadmin to sites-enabled
+  file:
+    src: /etc/nginx/sites-available/myadmin.magento.local.conf
+    dest: /etc/nginx/sites-enabled/myadmin.magento.local.conf
+    state: link
+  notify: restartNginx

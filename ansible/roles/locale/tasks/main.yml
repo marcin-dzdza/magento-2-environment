@@ -1,0 +1,25 @@
+- name: Install locale
+  locale_gen:
+    name: "{{ default_locale }}"
+    state: present
+  notify:
+    - rebuild locales database
+- name: Select default locale
+  debconf:
+    name: locales
+    question: locales/default_environment_locale
+    value: "{{ default_locale }}"
+    vtype: select
+  register: defaultLocaleChanged
+  notify:
+    - rebuild locales database
+- name: Update locale variables
+  shell: "update-locale {{ item }}={{ default_locale }}"
+  with_items:
+    - 'LANG'
+    - 'LANGUAGE'
+    - 'LC_ALL'
+  when: defaultLocaleChanged.changed
+- name: Change timezone
+  timezone:
+    name: "{{ timezone }}"

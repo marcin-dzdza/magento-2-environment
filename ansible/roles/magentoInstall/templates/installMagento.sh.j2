@@ -1,0 +1,17 @@
+#!/bin/bash
+{{ app_base_path }}/bin/magento setup:install \
+  --base-url={{ app_url }} \
+  --db-host=localhost \
+  --db-name={{ app_db_name }} \
+  --db-user={{ app_db_user }} \
+  --db-password={{ app_db_password }} \
+  --admin-firstname={{ app_admin_firstname }} \
+  --admin-lastname={{ app_admin_lastname }} \
+  --admin-email={{ app_admin_email }} \
+  --admin-user={{ app_admin_login }} \
+  --admin-password={{ app_admin_password }} \
+  --backend-frontname={{ app_backend_frontname }} \
+  --language={{ app_language }} \
+  --currency={{ app_currency }} \
+  --timezone={{ app_timezone }} \
+  --use-rewrites=1

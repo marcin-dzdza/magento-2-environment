@@ -1,0 +1,14 @@
+upstream fastcgi_backend {
+     server  unix:{{ fpm_path }};
+ }
+
+ server {
+     listen 80;
+     server_name {{ app_hostname }};
+
+     access_log {{ app_access_log }};
+     error_log {{ app_error_log }};
+
+     set $MAGE_ROOT {{ app_base_path }};
+     include {{ app_base_path }}/nginx.conf.sample;
+ }

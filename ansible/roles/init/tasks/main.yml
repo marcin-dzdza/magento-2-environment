@@ -1,0 +1,41 @@
+#- name: Run apt-get update
+#  apt:
+#    update_cache: yes
+#    cache_valid_time: 86400
+#  become: yes
+#- name: Install git
+#  apt:
+#    name: git
+#    state: present
+#- name: Create www-user with ssh keys
+#  user:
+#    name: "{{www_user}}"
+#    shell: /bin/bash
+#    createhome: yes
+#    group: "{{www_group}}"
+#- name: Create www-user ssh folder
+#  file:
+#    path: "/home/{{ www_user }}/.ssh"
+#    owner: "{{ www_user }}"
+#    group: "{{ www_group }}"
+#    mode: 0755
+#    state: directory
+#- name: Copy ssh keys to access project repository
+#  copy:
+#    src: "/ansible/tmp/{{ item }}"
+#    dest: "/home/{{ www_user }}/.ssh/"
+#    remote_src: yes
+#    owner: "{{ www_user }}"
+#    group: "{{ www_group }}"
+#    mode: 0700
+#  with_items:
+#    - id_rsa.pub
+#    - id_rsa
+- name: Add ansible repository
+  apt_repository:
+    repo: 'ppa:ansible/ansible'
+    update_cache: yes
+- name: Install ansible
+  apt:
+    name: ansible
+    state: present

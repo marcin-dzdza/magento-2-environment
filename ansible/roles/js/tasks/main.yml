@@ -1,0 +1,12 @@
+- name: Install nodejs and npm
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - nodejs
+    - npm
+- name: Link nodejs executable to node which is used by grunt
+  file:
+    src: /usr/bin/nodejs
+    dest: /usr/bin/node
+    state: link
