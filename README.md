@@ -100,7 +100,8 @@ After mounting the directory, you can open it locally in PhpStorm.
 
 ##2. Xdebug
 
-Guest machine has xdebug installed and configured.
+Guest machine has xdebug installed and php.ini modified.
+You need to configure PhpStorm and browser.
 
 ##3. PhpMyAdmin
 
@@ -131,6 +132,18 @@ If you want to install sample data, run:
 cd {env_root_dir}/vagrant-dev
 vagrant ssh
 (as user vagrant) sh /ansible/sampleData.sh
+```
+
+##6. Magento Dev Tools
+
+Follow this instruction to configure PhpStorm and browser:
+https://github.com/magespecialist/mage-chrome-toolbar#installing-on-magento-2
+
+Everything related to Magento itself can be done by:
+```
+cd {env_root_dir}/vagrant-dev
+vagrant ssh
+(as user vagrant) sh /ansible/devTools.sh
 ```
 
 ##6. Working with the environment

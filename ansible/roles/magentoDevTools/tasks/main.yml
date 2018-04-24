@@ -1,0 +1,31 @@
+- name: Install DevTools using composer
+  composer:
+    command: require
+    arguments: msp/devtools
+    no_dev: no
+    working_dir: "{{ app_base_path }}"
+  become: yes
+  become_user: "{{ www_user }}"
+- name: Flush cache by magento command
+  shell: "bin/magento cache:flush"
+  become: yes
+  become_user: "{{ www_user }}"
+  args:
+    chdir: "{{ app_base_path }}"
+- name: Turn off full page cache
+  shell: "bin/magento cache:disable full_page"
+  become: yes
+  become_user: "{{ www_user }}"
+  args:
+    chdir: "{{ app_base_path }}"
+- name: Enable DevTools in Magento by updating core_config_data table
+  shell: "mysql -u {{ app_db_user }} -p{{ app_db_password }} -h 127.0.0.1 {{ app_db_name }} < /ansible/roles/magentoDevTools/files/insert_dev_tools_config.sql"
+- name: Enable db profiler in app/env.php
+  lineinfile:
+    dest: "{{ app_base_path }}/app/etc/env.php"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  with_items:
+    - { regexp: '.*return array.*', line: "return array_merge_recursive(['db' => ['connection' => ['default' => ['profiler' => '1']]]], array (" }
+    - { regexp: '.*\);.*', line: '));' }
